@@ -139,7 +139,7 @@ export default function App() {
         const waveTxn = wavePortalContract.wave(newMusic, { gasLimit: 300000 });
         count = await wavePortalContract.getTotalWaves();
       } else {
-       // TODO - Snackbar "Objeto etheriun não existe"
+        // TODO - Snackbar "Objeto etheriun não existe"
       }
     } catch (error) {
       console.log(error);
@@ -153,9 +153,9 @@ export default function App() {
     const year = d.getFullYear();
     const hours = `0${d.getHours()}`.slice(-2);
     const minutes = `0${d.getMinutes()}`.slice(-2);
-   
+
     return `${day}/${month}/${year} às ${hours}:${minutes}`;
-  }
+  };
 
   return (
     <div style={{ width: 900, margin: "0 auto", textAlign: "center" }}>
@@ -218,22 +218,26 @@ export default function App() {
         <button onClick={connectWallet}>Conectar carteira</button>
       )}
 
-      {allWaves.map((wave, index) => {
-        return (
-          <div
-            key={index}
-            style={{
-              backgroundColor: "OldLace",
-              marginTop: "16px",
-              padding: "8px",
-            }}
-          >
-            <div>Endereço: {wave.address}</div>
-            <div>Data/Horário: { formatDate(wave.timestamp.toString())}</div>
-            <div>Música: {wave.music}</div>
-          </div>
-        );
-      })}
+      {allWaves
+        .sort((a, b) => {
+          return b.timestamp - a.timestamp;
+        })
+        .map((wave, index) => {
+          return (
+            <div
+              key={index}
+              style={{
+                backgroundColor: "OldLace",
+                marginTop: "16px",
+                padding: "8px",
+              }}
+            >
+              <h3>Música: {wave.music}</h3>
+              <div>Endereço: {wave.address}</div>
+              <div>Data/Horário: {formatDate(wave.timestamp.toString())}</div>
+            </div>
+          );
+        })}
     </div>
   );
 }
