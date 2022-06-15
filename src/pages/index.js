@@ -6,15 +6,16 @@ export default function App() {
   const [currentAccount, setCurrentAccount] = useState("");
   const [allWaves, setAllWaves] = useState([]);
   const [newMusic, setNewMusic] = useState("");
-  const contractAddress = "0x9acB42d8Aa9d9e4ED140809371895e708e6C66Be";
+  const contractAddress = "0x4E1cB44b4be8D86529d0d915E1dF743585332b6F";
   const contractABI = abi.abi;
 
   /*
    * Método para consultar todos os tchauzinhos do contrato
    */
   const getAllWaves = async () => {
+    const { ethereum } = window;
+
     try {
-      const { ethereum } = window;
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
@@ -23,27 +24,17 @@ export default function App() {
           contractABI,
           signer
         );
-
-        /*
-         * Chama o método getAllWaves do seu contrato inteligente
-         */
         const waves = await wavePortalContract.getAllWaves();
 
-        /*
-         * Apenas precisamos do endereço, data/horário, e mensagem na nossa tela, então vamos selecioná-los
-         */
-        let wavesCleaned = [];
-        waves.forEach((wave) => {
-          wavesCleaned.push({
+        const wavesCleaned = waves.map(wave => {
+          return {
             address: wave.waver,
             timestamp: new Date(wave.timestamp * 1000),
             music: wave.music,
-          });
+          };
         });
 
-        /*
-         * Armazenando os dados
-         */
+
         setAllWaves(wavesCleaned);
       } else {
         console.log("Objeto Ethereum não existe!");
@@ -52,6 +43,36 @@ export default function App() {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    let wavePortalContract;
+  
+    const onNewWave = (from, timestamp, music) => {
+      console.log("NewWave", from, timestamp, music);
+      setAllWaves(prevState => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          music: music,
+        },
+      ]);
+    };
+  
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+  
+      wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+      wavePortalContract.on("NewWave", onNewWave);
+    }
+  
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off("NewWave", onNewWave);
+      }
+    };
+  }, [contractABI]);
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -122,11 +143,8 @@ export default function App() {
 
         let count = await wavePortalContract.getTotalWaves();
         console.log("Recuperado o número de tchauzinhos...", count.toNumber());
-        const waveTxn = await wavePortalContract.wave(newMusic);
-        console.log("Minerando...", waveTxn.hash);
+        const waveTxn = wavePortalContract.wave(newMusic, { gasLimit: 300000 })
 
-        await waveTxn.wait();
-        console.log("Minerado -- ", waveTxn.hash);
 
         count = await wavePortalContract.getTotalWaves();
         console.log("Total de tchauzinhos recuperado...", count.toNumber());
@@ -159,31 +177,40 @@ export default function App() {
         </strong>
       </p>
 
-<div style={{display: 'flex', flexDirection: 'column', maxWidth: 300, margin: '0 auto'}}>
-      <input
-      style={{ marginBottom: 10, padding: 15, borderRadius: 5, border: '1px solid #ccc'}}
-        type="text"
-        value={newMusic}
-        onChange={(e) => setNewMusic(e.target.value)}
-
-      />
-
-     
-      <button
+      <div
         style={{
-          background: "red",
-          border: "none",
-          padding: 15,
-          borderRadius: 4,
-          color: "white",
-          fontSize: 18,
-          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          maxWidth: 300,
+          margin: "0 auto",
         }}
-        onClick={wave}
       >
-        Enviar a música
-      </button>
+        <input
+          style={{
+            marginBottom: 10,
+            padding: 15,
+            borderRadius: 5,
+            border: "1px solid #ccc",
+          }}
+          type="text"
+          value={newMusic}
+          onChange={(e) => setNewMusic(e.target.value)}
+        />
 
+        <button
+          style={{
+            background: "red",
+            border: "none",
+            padding: 15,
+            borderRadius: 4,
+            color: "white",
+            fontSize: 18,
+            cursor: "pointer",
+          }}
+          onClick={wave}
+        >
+          Enviar a música
+        </button>
       </div>
 
       {!currentAccount && (
