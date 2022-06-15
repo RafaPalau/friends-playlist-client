@@ -9,9 +9,6 @@ export default function App() {
   const contractAddress = "0x4E1cB44b4be8D86529d0d915E1dF743585332b6F";
   const contractABI = abi.abi;
 
-  /*
-   * Método para consultar todos os tchauzinhos do contrato
-   */
   const getAllWaves = async () => {
     const { ethereum } = window;
 
@@ -26,7 +23,7 @@ export default function App() {
         );
         const waves = await wavePortalContract.getAllWaves();
 
-        const wavesCleaned = waves.map(wave => {
+        const wavesCleaned = waves.map((wave) => {
           return {
             address: wave.waver,
             timestamp: new Date(wave.timestamp * 1000),
@@ -34,10 +31,9 @@ export default function App() {
           };
         });
 
-
         setAllWaves(wavesCleaned);
       } else {
-        console.log("Objeto Ethereum não existe!");
+        // TODO - Snackbar "Objeto etheriun não existe"
       }
     } catch (error) {
       console.log(error);
@@ -46,10 +42,10 @@ export default function App() {
 
   useEffect(() => {
     let wavePortalContract;
-  
+
     const onNewWave = (from, timestamp, music) => {
       console.log("NewWave", from, timestamp, music);
-      setAllWaves(prevState => [
+      setAllWaves((prevState) => [
         ...prevState,
         {
           address: from,
@@ -58,15 +54,19 @@ export default function App() {
         },
       ]);
     };
-  
+
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-  
-      wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+      wavePortalContract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
       wavePortalContract.on("NewWave", onNewWave);
     }
-  
+
     return () => {
       if (wavePortalContract) {
         wavePortalContract.off("NewWave", onNewWave);
@@ -79,11 +79,8 @@ export default function App() {
       const { ethereum } = window;
 
       if (!ethereum) {
-        console.log("Garanta que possua a Metamask instalada!");
-
         return;
       } else {
-        console.log("Temos o objeto ethereum", ethereum);
         getAllWaves();
       }
 
@@ -91,19 +88,16 @@ export default function App() {
 
       if (accounts.length !== 0) {
         const account = accounts[0];
-        console.log("Encontrada a conta autorizada:", account);
+        // TODO - Snackbar "Encontrada a conta autorizada"
         setCurrentAccount(account);
       } else {
-        console.log("Nenhuma conta autorizada foi encontrada");
+        // TODO - Snackbar "Nenhuma conta autorizada foi encontrada"
       }
     } catch (error) {
       console.log(error);
     }
   };
 
-  /**
-   * Implemente aqui o seu método connectWallet
-   */
   const connectWallet = async () => {
     try {
       const { ethereum } = window;
@@ -117,7 +111,7 @@ export default function App() {
         method: "eth_requestAccounts",
       });
 
-      console.log("Conectado", accounts[0]);
+      // TODO - snackbar success "Conta Conectada accounts[0]"
       setCurrentAccount(accounts[0]);
     } catch (error) {
       console.log(error);
@@ -142,19 +136,26 @@ export default function App() {
         );
 
         let count = await wavePortalContract.getTotalWaves();
-        console.log("Recuperado o número de tchauzinhos...", count.toNumber());
-        const waveTxn = wavePortalContract.wave(newMusic, { gasLimit: 300000 })
-
-
+        const waveTxn = wavePortalContract.wave(newMusic, { gasLimit: 300000 });
         count = await wavePortalContract.getTotalWaves();
-        console.log("Total de tchauzinhos recuperado...", count.toNumber());
       } else {
-        console.log("Objeto Ethereum não encontrado!");
+       // TODO - Snackbar "Objeto etheriun não existe"
       }
     } catch (error) {
       console.log(error);
     }
   };
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const month = `0${d.getMonth() + 1}`.slice(-2);
+    const day = `0${d.getDate()}`.slice(-2);
+    const year = d.getFullYear();
+    const hours = `0${d.getHours()}`.slice(-2);
+    const minutes = `0${d.getMinutes()}`.slice(-2);
+   
+    return `${day}/${month}/${year} às ${hours}:${minutes}`;
+  }
 
   return (
     <div style={{ width: 900, margin: "0 auto", textAlign: "center" }}>
@@ -228,7 +229,7 @@ export default function App() {
             }}
           >
             <div>Endereço: {wave.address}</div>
-            <div>Data/Horário: {wave.timestamp.toString()}</div>
+            <div>Data/Horário: { formatDate(wave.timestamp.toString())}</div>
             <div>Música: {wave.music}</div>
           </div>
         );
